@@ -1,10 +1,12 @@
-import { Router, type IRouter } from "express";
-import healthRouter from "./health.js";
-import stocksRouter from "./stocks.js";
+import { Router } from 'express';
+import healthRouter from './health';
+import stocksRouter from './stocks';
 
-const router: IRouter = Router();
+const router = Router();
 
-router.use(healthRouter);
-router.use(stocksRouter);
+// @ts-ignore
+router.use('/health', healthRouter);
+// @ts-ignore
+router.use('/stocks', stocksRouter);
 
 export default router;
