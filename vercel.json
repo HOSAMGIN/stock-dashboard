@@ -2,17 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "artifacts/api-server/src/index.ts",
+      "src": "artifacts/api-server/dist/index.cjs",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": [
-          "lib/api-zod/src/**",
-          "lib/db/src/**"
-        ]
+        "buildCommand": "pnpm --filter @workspace/api-server run build"
       }
     }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "artifacts/api-server/src/index.ts" }
+    { "src": "/(.*)", "dest": "artifacts/api-server/dist/index.cjs" }
   ]
 }
