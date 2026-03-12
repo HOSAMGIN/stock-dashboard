@@ -1,14 +1,12 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "artifacts/api-server/dist/index.cjs",
-      "use": "@vercel/node",
-      "config": {
-        "buildCommand": "pnpm --filter @workspace/api-server run build"
-      }
+  "buildCommand": "pnpm --filter @workspace/api-server run build",
+  "outputDirectory": "artifacts/api-server/dist",
+  "functions": {
+    "artifacts/api-server/dist/index.cjs": {
+      "runtime": "nodejs20.x"
     }
-  ],
+  },
   "routes": [
     { "src": "/(.*)", "dest": "artifacts/api-server/dist/index.cjs" }
   ]
