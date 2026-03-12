@@ -5,12 +5,14 @@
       "src": "artifacts/api-server/dist/index.cjs",
       "use": "@vercel/node",
       "config": {
-        "installCommand": "pnpm install --no-frozen-lockfile",
         "buildCommand": "pnpm --filter @workspace/api-server run build"
       }
     }
   ],
   "routes": [
     { "src": "/(.*)", "dest": "artifacts/api-server/dist/index.cjs" }
-  ]
+  ],
+  "env": {
+    "ENABLE_EXPERIMENTAL_COREPACK": "1"
+  }
 }
