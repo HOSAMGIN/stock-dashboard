@@ -10,5 +10,6 @@ await esbuild({
   minify: true,
   external: externals,
   logLevel: "info",
-  resolveExtensions: [".ts", ".tsx", ".js", ".jsx"],  // 추가
+  resolveExtensions: [".ts", ".tsx", ".js", ".jsx"],
+  symlinks: false,
 });
