@@ -2,14 +2,23 @@ import { build as esbuild } from "esbuild";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// ESM 환경(tsx 실행)에서 __dirname을 사용하기 위한 설정
+// 1. ESM 환경에서 __dirname 설정 (tsx 사용 시 필수)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 기존에 정의되지 않았을 수 있는 변수들 (코드에 따라 확인 필요)
-const distDir = path.resolve(__dirname, "dist"); 
-const externals = ["express", "cors", "cookie-parser", "drizzle-orm", "yahoo-finance2"]; // 로그 기반 외부 모듈 예시
+// 2. 경로 및 설정 변수 정의
+const distDir = path.resolve(__dirname, "dist");
+const externals = [
+  "express", 
+  "cors", 
+  "cookie-parser", 
+  "drizzle-orm", 
+  "yahoo-finance2",
+  "@workspace/db",
+  "@workspace/api-zod"
+];
 
+// 3. 빌드 실행
 await esbuild({
   entryPoints: [path.resolve(__dirname, "src/index.ts")],
   platform: "node",
