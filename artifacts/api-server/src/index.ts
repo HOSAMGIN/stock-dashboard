@@ -1,19 +1,10 @@
-import app from "./app";
+import app from "./app.js";
 
-const rawPort = process.env["PORT"];
+export default app;
 
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
+if (process.env["NODE_ENV"] !== "production") {
+  const port = Number(process.env["PORT"] || 3000);
+  app.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+  });
 }
-
-const port = Number(rawPort);
-
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
-
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-});
