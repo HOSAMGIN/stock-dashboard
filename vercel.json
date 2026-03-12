@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "artifacts/api-server/dist/index.cjs",
+      "src": "artifacts/api-server/src/index.ts",
       "use": "@vercel/node",
       "config": {
         "buildCommand": "pnpm --filter @workspace/api-server run build"
@@ -10,9 +10,6 @@
     }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "artifacts/api-server/dist/index.cjs" }
-  ],
-  "env": {
-    "ENABLE_EXPERIMENTAL_COREPACK": "1"
-  }
+    { "src": "/(.*)", "dest": "artifacts/api-server/src/index.ts" }
+  ]
 }
