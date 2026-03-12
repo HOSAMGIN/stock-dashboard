@@ -13,18 +13,19 @@ if (!fs.existsSync(distDir)) {
   fs.mkdirSync(distDir, { recursive: true });
 }
 
-// 3. 빌드에서 제외할 라이브러리 목록
+// 3. 빌드에서 제외할 라이브러리 목록 (에러가 났던 zod 추가 완료)
 const externals = [
   "express",
   "cors",
   "cookie-parser",
   "drizzle-orm",
   "yahoo-finance2",
+  "zod", // <--- zod 에러 해결을 위해 추가됨
   "@workspace/db",
   "@workspace/api-zod"
 ];
 
-// 4. 실제 빌드 실행 (에러 원인이었던 symlinks 옵션 제거 완료)
+// 4. 실제 빌드 실행
 await esbuild({
   entryPoints: [path.resolve(__dirname, "src/index.ts")],
   platform: "node",
