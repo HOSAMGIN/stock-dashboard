@@ -1,13 +1,18 @@
-import express, { type Express } from "express";
-import cors from "cors";
-import router from "./routes/index.js";
+import express from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import routes from './routes';
 
-const app: Express = express();
+const app = express();
 
+// @ts-ignore
 app.use(cors());
+// @ts-ignore
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// @ts-ignore
+app.use(cookieParser());
 
-app.use("/api", router);
+// @ts-ignore
+app.use('/api', routes);
 
 export default app;
