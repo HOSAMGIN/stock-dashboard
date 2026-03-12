@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RsiGauge } from "@/components/RsiGauge";
 import { DeviationChart } from "@/components/DeviationChart";
+import { BodyPositionGauge } from "@/components/BodyPositionGauge";
 import { formatPrice, formatPercent, formatVolume } from "@/lib/utils";
 import type { StockData } from "@workspace/api-client-react";
 import { ArrowUpRight, ArrowDownRight, Activity, BarChart2 } from "lucide-react";
@@ -105,6 +106,12 @@ export function StockCard({ data, index }: StockCardProps) {
             </div>
             <DeviationChart data={data.historicalPrices} symbol={data.displaySymbol} />
           </div>
+
+          <BodyPositionGauge
+            historicalPrices={data.historicalPrices}
+            currentPrice={data.currentPrice}
+            rsi14={data.rsi14}
+          />
         </CardContent>
       </Card>
     </motion.div>
