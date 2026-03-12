@@ -1,13 +1,18 @@
 {
   "version": 2,
-  "buildCommand": "pnpm --filter @workspace/api-server run build",
-  "outputDirectory": "artifacts/api-server/dist",
-  "functions": {
-    "artifacts/api-server/dist/index.cjs": {
-      "runtime": "nodejs20.x"
+  "builds": [
+    {
+      "src": "artifacts/api-server/src/index.ts",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "lib/api-zod/src/**",
+          "lib/db/src/**"
+        ]
+      }
     }
-  },
+  ],
   "routes": [
-    { "src": "/(.*)", "dest": "artifacts/api-server/dist/index.cjs" }
+    { "src": "/(.*)", "dest": "artifacts/api-server/src/index.ts" }
   ]
 }
