@@ -2,14 +2,15 @@
   "version": 2,
   "builds": [
     {
-      "src": "artifacts/api-server/dist/index.cjs",
-      "use": "@vercel/node",
-      "config": {
-        "buildCommand": "pnpm --filter @workspace/api-server run build"
-      }
+      "src": "artifacts/api-server/build.ts",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "artifacts/api-server/dist/index.cjs" }
-  ]
+    {
+      "src": "/(.*)",
+      "dest": "artifacts/api-server/dist/index.cjs"
+    }
+  ],
+  "outputDirectory": "artifacts/api-server/dist"
 }
