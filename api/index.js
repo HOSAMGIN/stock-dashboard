@@ -1,4 +1,12 @@
-import app from '../artifacts/api-server/src/app.js';
+const express = require('express');
+const app = express();
 
-// Vercel Serverless Function으로 내보내기
-export default app;
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Server is Live!' });
+});
+
+app.get('/', (req, res) => {
+  res.send('Stock Dashboard Server is running!');
+});
+
+module.exports = app;
