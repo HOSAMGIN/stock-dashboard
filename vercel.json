@@ -1,20 +1,18 @@
 {
   "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "artifacts/api-server/build.ts",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "artifacts/api-server/dist/index.cjs"
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "artifacts/api-server/dist/index.cjs"
+      "source": "/(.*)",
+      "destination": "/api/index.js"
     }
   ],
-  "outputDirectory": "artifacts/api-server/dist"
+  "functions": {
+    "api/index.js": {
+      "runtime": "vercel-node@latest"
+    }
+  }
 }
