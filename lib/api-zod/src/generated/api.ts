@@ -16,7 +16,7 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
- * Returns current price, RSI(14), and MA20 deviation for all tracked symbols
+ * Returns current price, RSI(14), MA20, MACD, Bollinger Bands for all tracked symbols
  * @summary Get stock data with indicators
  */
 export const GetStocksResponse = zod.object({
@@ -43,26 +43,55 @@ export const GetStocksResponse = zod.object({
       ma20DeviationPercent: zod
         .number()
         .describe("Current price deviation from MA20 in percent"),
+      bbUpper: zod
+        .number()
+        .describe("Bollinger Band upper line (SMA20 + 2\*stddev)"),
+      bbMiddle: zod.number().describe("Bollinger Band middle line (SMA20)"),
+      bbLower: zod
+        .number()
+        .describe("Bollinger Band lower line (SMA20 - 2\*stddev)"),
+      isTouchingLowerBand: zod
+        .boolean()
+        .describe(
+          "True when current price is at or below the lower Bollinger Band",
+        ),
+      isSuperBuySignal: zod
+        .boolean()
+        .describe(
+          "True when price touches lower BB AND RSI < 30 — extreme buy opportunity",
+        ),
+      macdLine: zod.number().describe("MACD line value (EMA12 - EMA26)"),
+      signalLine: zod.number().describe("MACD signal line (EMA9 of MACD)"),
+      macdHistogram: zod.number().describe("MACD histogram (MACD - Signal)"),
       historicalPrices: zod
         .array(
           zod.object({
             date: zod.string().describe("Date in YYYY-MM-DD format"),
             close: zod.number().describe("Closing price"),
-            ma20: zod
-              .number()
-              .describe("MA20 at this date (null if not enough data)"),
+            ma20: zod.number().describe("MA20 at this date"),
             deviationPercent: zod
               .number()
               .describe("Deviation from MA20 in percent"),
+            bbUpper: zod.number().describe("Upper Bollinger Band"),
+            bbMiddle: zod.number().describe("Middle Bollinger Band (SMA20)"),
+            bbLower: zod.number().describe("Lower Bollinger Band"),
+            macdLine: zod.number().describe("MACD line value"),
+            signalLine: zod.number().describe("MACD signal line value"),
+            macdHistogram: zod.number().describe("MACD histogram value"),
           }),
         )
-        .describe("Historical closing prices (last 30 days)"),
+        .describe(
+          "Historical closing prices (last 30 days with all indicators)",
+        ),
       lastUpdated: zod.string().describe("ISO timestamp of last update"),
       volume: zod.number().describe("Trading volume"),
       currency: zod.string().describe("Currency code (USD, KRW, etc.)"),
     }),
   ),
   lastUpdated: zod.string().describe("ISO timestamp of last update"),
+  superBuySignals: zod
+    .array(zod.string())
+    .describe("List of symbols currently triggering the super buy alert"),
 });
 
 /**
@@ -93,20 +122,44 @@ export const GetStockResponse = zod.object({
   ma20DeviationPercent: zod
     .number()
     .describe("Current price deviation from MA20 in percent"),
+  bbUpper: zod
+    .number()
+    .describe("Bollinger Band upper line (SMA20 + 2\*stddev)"),
+  bbMiddle: zod.number().describe("Bollinger Band middle line (SMA20)"),
+  bbLower: zod
+    .number()
+    .describe("Bollinger Band lower line (SMA20 - 2\*stddev)"),
+  isTouchingLowerBand: zod
+    .boolean()
+    .describe(
+      "True when current price is at or below the lower Bollinger Band",
+    ),
+  isSuperBuySignal: zod
+    .boolean()
+    .describe(
+      "True when price touches lower BB AND RSI < 30 — extreme buy opportunity",
+    ),
+  macdLine: zod.number().describe("MACD line value (EMA12 - EMA26)"),
+  signalLine: zod.number().describe("MACD signal line (EMA9 of MACD)"),
+  macdHistogram: zod.number().describe("MACD histogram (MACD - Signal)"),
   historicalPrices: zod
     .array(
       zod.object({
         date: zod.string().describe("Date in YYYY-MM-DD format"),
         close: zod.number().describe("Closing price"),
-        ma20: zod
-          .number()
-          .describe("MA20 at this date (null if not enough data)"),
+        ma20: zod.number().describe("MA20 at this date"),
         deviationPercent: zod
           .number()
           .describe("Deviation from MA20 in percent"),
+        bbUpper: zod.number().describe("Upper Bollinger Band"),
+        bbMiddle: zod.number().describe("Middle Bollinger Band (SMA20)"),
+        bbLower: zod.number().describe("Lower Bollinger Band"),
+        macdLine: zod.number().describe("MACD line value"),
+        signalLine: zod.number().describe("MACD signal line value"),
+        macdHistogram: zod.number().describe("MACD histogram value"),
       }),
     )
-    .describe("Historical closing prices (last 30 days)"),
+    .describe("Historical closing prices (last 30 days with all indicators)"),
   lastUpdated: zod.string().describe("ISO timestamp of last update"),
   volume: zod.number().describe("Trading volume"),
   currency: zod.string().describe("Currency code (USD, KRW, etc.)"),

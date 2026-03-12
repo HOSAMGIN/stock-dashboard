@@ -106,7 +106,7 @@ export function useHealthCheck<
 }
 
 /**
- * Returns current price, RSI(14), and MA20 deviation for all tracked symbols
+ * Returns current price, RSI(14), MA20, MACD, Bollinger Bands for all tracked symbols
  * @summary Get stock data with indicators
  */
 export const getGetStocksUrl = () => {

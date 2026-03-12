@@ -11,8 +11,20 @@ export interface PricePoint {
   date: string;
   /** Closing price */
   close: number;
-  /** MA20 at this date (null if not enough data) */
+  /** MA20 at this date */
   ma20: number;
   /** Deviation from MA20 in percent */
   deviationPercent: number;
+  /** Upper Bollinger Band */
+  bbUpper: number;
+  /** Middle Bollinger Band (SMA20) */
+  bbMiddle: number;
+  /** Lower Bollinger Band */
+  bbLower: number;
+  /** MACD line value */
+  macdLine: number;
+  /** MACD signal line value */
+  signalLine: number;
+  /** MACD histogram value */
+  macdHistogram: number;
 }

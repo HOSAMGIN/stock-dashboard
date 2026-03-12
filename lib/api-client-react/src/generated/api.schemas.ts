@@ -38,10 +38,22 @@ export interface PricePoint {
   date: string;
   /** Closing price */
   close: number;
-  /** MA20 at this date (null if not enough data) */
+  /** MA20 at this date */
   ma20: number;
   /** Deviation from MA20 in percent */
   deviationPercent: number;
+  /** Upper Bollinger Band */
+  bbUpper: number;
+  /** Middle Bollinger Band (SMA20) */
+  bbMiddle: number;
+  /** Lower Bollinger Band */
+  bbLower: number;
+  /** MACD line value */
+  macdLine: number;
+  /** MACD signal line value */
+  signalLine: number;
+  /** MACD histogram value */
+  macdHistogram: number;
 }
 
 export interface StockData {
@@ -67,7 +79,23 @@ export interface StockData {
   ma20: number;
   /** Current price deviation from MA20 in percent */
   ma20DeviationPercent: number;
-  /** Historical closing prices (last 30 days) */
+  /** Bollinger Band upper line (SMA20 + 2*stddev) */
+  bbUpper: number;
+  /** Bollinger Band middle line (SMA20) */
+  bbMiddle: number;
+  /** Bollinger Band lower line (SMA20 - 2*stddev) */
+  bbLower: number;
+  /** True when current price is at or below the lower Bollinger Band */
+  isTouchingLowerBand: boolean;
+  /** True when price touches lower BB AND RSI < 30 — extreme buy opportunity */
+  isSuperBuySignal: boolean;
+  /** MACD line value (EMA12 - EMA26) */
+  macdLine: number;
+  /** MACD signal line (EMA9 of MACD) */
+  signalLine: number;
+  /** MACD histogram (MACD - Signal) */
+  macdHistogram: number;
+  /** Historical closing prices (last 30 days with all indicators) */
   historicalPrices: PricePoint[];
   /** ISO timestamp of last update */
   lastUpdated: string;
@@ -81,6 +109,8 @@ export interface StocksResponse {
   stocks: StockData[];
   /** ISO timestamp of last update */
   lastUpdated: string;
+  /** List of symbols currently triggering the super buy alert */
+  superBuySignals: string[];
 }
 
 export interface ErrorResponse {

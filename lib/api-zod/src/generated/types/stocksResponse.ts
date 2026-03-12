@@ -11,4 +11,6 @@ export interface StocksResponse {
   stocks: StockData[];
   /** ISO timestamp of last update */
   lastUpdated: string;
+  /** List of symbols currently triggering the super buy alert */
+  superBuySignals: string[];
 }

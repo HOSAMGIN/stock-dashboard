@@ -32,7 +32,23 @@ export interface StockData {
   ma20: number;
   /** Current price deviation from MA20 in percent */
   ma20DeviationPercent: number;
-  /** Historical closing prices (last 30 days) */
+  /** Bollinger Band upper line (SMA20 + 2*stddev) */
+  bbUpper: number;
+  /** Bollinger Band middle line (SMA20) */
+  bbMiddle: number;
+  /** Bollinger Band lower line (SMA20 - 2*stddev) */
+  bbLower: number;
+  /** True when current price is at or below the lower Bollinger Band */
+  isTouchingLowerBand: boolean;
+  /** True when price touches lower BB AND RSI < 30 — extreme buy opportunity */
+  isSuperBuySignal: boolean;
+  /** MACD line value (EMA12 - EMA26) */
+  macdLine: number;
+  /** MACD signal line (EMA9 of MACD) */
+  signalLine: number;
+  /** MACD histogram (MACD - Signal) */
+  macdHistogram: number;
+  /** Historical closing prices (last 30 days with all indicators) */
   historicalPrices: PricePoint[];
   /** ISO timestamp of last update */
   lastUpdated: string;

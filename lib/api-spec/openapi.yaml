@@ -30,7 +30,7 @@ paths:
       operationId: getStocks
       tags: [stocks]
       summary: Get stock data with indicators
-      description: Returns current price, RSI(14), and MA20 deviation for all tracked symbols
+      description: Returns current price, RSI(14), MA20, MACD, Bollinger Bands for all tracked symbols
       responses:
         "200":
           description: Stock data with technical indicators
@@ -110,9 +110,33 @@ components:
         ma20DeviationPercent:
           type: number
           description: Current price deviation from MA20 in percent
+        bbUpper:
+          type: number
+          description: Bollinger Band upper line (SMA20 + 2*stddev)
+        bbMiddle:
+          type: number
+          description: Bollinger Band middle line (SMA20)
+        bbLower:
+          type: number
+          description: Bollinger Band lower line (SMA20 - 2*stddev)
+        isTouchingLowerBand:
+          type: boolean
+          description: True when current price is at or below the lower Bollinger Band
+        isSuperBuySignal:
+          type: boolean
+          description: True when price touches lower BB AND RSI < 30 — extreme buy opportunity
+        macdLine:
+          type: number
+          description: MACD line value (EMA12 - EMA26)
+        signalLine:
+          type: number
+          description: MACD signal line (EMA9 of MACD)
+        macdHistogram:
+          type: number
+          description: MACD histogram (MACD - Signal)
         historicalPrices:
           type: array
-          description: Historical closing prices (last 30 days)
+          description: Historical closing prices (last 30 days with all indicators)
           items:
             $ref: "#/components/schemas/PricePoint"
         lastUpdated:
@@ -136,6 +160,14 @@ components:
         - rsiSignal
         - ma20
         - ma20DeviationPercent
+        - bbUpper
+        - bbMiddle
+        - bbLower
+        - isTouchingLowerBand
+        - isSuperBuySignal
+        - macdLine
+        - signalLine
+        - macdHistogram
         - historicalPrices
         - lastUpdated
         - volume
@@ -151,15 +183,39 @@ components:
           description: Closing price
         ma20:
           type: number
-          description: MA20 at this date (null if not enough data)
+          description: MA20 at this date
         deviationPercent:
           type: number
           description: Deviation from MA20 in percent
+        bbUpper:
+          type: number
+          description: Upper Bollinger Band
+        bbMiddle:
+          type: number
+          description: Middle Bollinger Band (SMA20)
+        bbLower:
+          type: number
+          description: Lower Bollinger Band
+        macdLine:
+          type: number
+          description: MACD line value
+        signalLine:
+          type: number
+          description: MACD signal line value
+        macdHistogram:
+          type: number
+          description: MACD histogram value
       required:
         - date
         - close
         - ma20
         - deviationPercent
+        - bbUpper
+        - bbMiddle
+        - bbLower
+        - macdLine
+        - signalLine
+        - macdHistogram
     StocksResponse:
       type: object
       properties:
@@ -170,9 +226,15 @@ components:
         lastUpdated:
           type: string
           description: ISO timestamp of last update
+        superBuySignals:
+          type: array
+          description: List of symbols currently triggering the super buy alert
+          items:
+            type: string
       required:
         - stocks
         - lastUpdated
+        - superBuySignals
     ErrorResponse:
       type: object
       properties:

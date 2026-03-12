@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RsiGauge } from "@/components/RsiGauge";
 import { DeviationChart } from "@/components/DeviationChart";
+import { BollingerChart } from "@/components/BollingerChart";
+import { MacdChart } from "@/components/MacdChart";
 import { BodyPositionGauge } from "@/components/BodyPositionGauge";
 import { formatPrice, formatPercent, formatVolume } from "@/lib/utils";
 import type { StockData } from "@workspace/api-client-react";
-import { ArrowUpRight, ArrowDownRight, Activity, BarChart2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { ArrowUpRight, ArrowDownRight, Activity, BarChart2, ChevronDown, ChevronUp, Zap } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface StockCardProps {
   data: StockData;
@@ -15,8 +17,11 @@ interface StockCardProps {
 }
 
 export function StockCard({ data, index }: StockCardProps) {
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const isUp = data.changePercent > 0;
   const ChangeIcon = isUp ? ArrowUpRight : ArrowDownRight;
+  const isIndex = data.category === "indices";
+  const currency = data.currency ?? "USD";
 
   const getRsiBadgeVariant = (signal: string) => {
     if (signal === "buy") return "success";
@@ -30,16 +35,33 @@ export function StockCard({ data, index }: StockCardProps) {
     return "중립";
   };
 
-  const isIndex = data.category === "indices";
-  const currency = data.currency ?? "USD";
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.07 }}
     >
-      <Card className="glass-panel overflow-hidden border-t-2 border-t-transparent hover:border-t-primary/50 transition-all duration-300 group h-full">
+      <Card
+        className={`glass-panel overflow-hidden border-t-2 transition-all duration-300 group h-full ${
+          data.isSuperBuySignal
+            ? "border-t-green-400 shadow-[0_0_24px_rgba(74,222,128,0.25)]"
+            : "border-t-transparent hover:border-t-primary/50"
+        }`}
+      >
+        {/* Super buy signal banner */}
+        {data.isSuperBuySignal && (
+          <motion.div
+            className="bg-green-500/15 border-b border-green-500/30 px-4 py-1.5 flex items-center gap-2"
+            animate={{ opacity: [0.7, 1, 0.7] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            <Zap className="w-3.5 h-3.5 text-green-400 shrink-0" />
+            <span className="text-[11px] font-bold font-mono text-green-400 tracking-wide">
+              역대급 매수 기회 — 볼린저 하단 + RSI 과매도
+            </span>
+          </motion.div>
+        )}
+
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
             <div>
@@ -67,6 +89,7 @@ export function StockCard({ data, index }: StockCardProps) {
         </CardHeader>
 
         <CardContent>
+          {/* Stats row */}
           <div className="grid grid-cols-2 gap-4 mt-2 bg-background/50 rounded-lg p-3 border border-white/5">
             <div className="space-y-0.5">
               <div className="text-xs text-muted-foreground flex items-center gap-1">
@@ -84,6 +107,7 @@ export function StockCard({ data, index }: StockCardProps) {
             </div>
           </div>
 
+          {/* RSI Gauge */}
           <div className="mt-5 space-y-2">
             <div className="flex justify-between items-end">
               <span className="text-xs font-medium text-muted-foreground">RSI 지수 현황</span>
@@ -94,6 +118,7 @@ export function StockCard({ data, index }: StockCardProps) {
             <RsiGauge value={data.rsi14} />
           </div>
 
+          {/* MA20 Deviation chart */}
           <div className="mt-6">
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs font-medium text-muted-foreground">MA20 이격도 (최근 30일)</span>
@@ -107,11 +132,52 @@ export function StockCard({ data, index }: StockCardProps) {
             <DeviationChart data={data.historicalPrices} symbol={data.displaySymbol} />
           </div>
 
+          {/* Body position gauge */}
           <BodyPositionGauge
             historicalPrices={data.historicalPrices}
             currentPrice={data.currentPrice}
             rsi14={data.rsi14}
           />
+
+          {/* Advanced charts toggle */}
+          <button
+            onClick={() => setShowAdvanced((v) => !v)}
+            className="w-full mt-5 flex items-center justify-center gap-1.5 text-xs font-mono text-muted-foreground/70 hover:text-muted-foreground transition-colors py-2 rounded-lg border border-white/5 hover:border-white/10 hover:bg-white/3"
+          >
+            {showAdvanced ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            {showAdvanced ? "고급 지표 접기" : "볼린저 밴드 · MACD 보기"}
+          </button>
+
+          {/* Advanced charts (collapsible) */}
+          <AnimatePresence>
+            {showAdvanced && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-4 space-y-6 pt-4 border-t border-white/5">
+                  {/* Bollinger Bands */}
+                  <BollingerChart
+                    data={data.historicalPrices}
+                    currentPrice={data.currentPrice}
+                    currency={currency}
+                    isTouchingLowerBand={data.isTouchingLowerBand}
+                  />
+
+                  {/* MACD */}
+                  <MacdChart
+                    data={data.historicalPrices}
+                    macdLine={data.macdLine}
+                    signalLine={data.signalLine}
+                    macdHistogram={data.macdHistogram}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </CardContent>
       </Card>
     </motion.div>

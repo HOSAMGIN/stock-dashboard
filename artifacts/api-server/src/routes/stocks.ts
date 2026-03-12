@@ -6,9 +6,13 @@ const router: IRouter = Router();
 router.get("/stocks", async (_req, res) => {
   try {
     const stocks = await getAllStocks();
+    const superBuySignals = stocks
+      .filter((s) => s.isSuperBuySignal)
+      .map((s) => s.displaySymbol);
     res.json({
       stocks,
       lastUpdated: new Date().toISOString(),
+      superBuySignals,
     });
   } catch (err) {
     console.error("Failed to fetch stocks:", err);

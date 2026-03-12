@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useGetStocks } from "@workspace/api-client-react";
 import type { StockData } from "@workspace/api-client-react";
 import { StockCard } from "@/components/StockCard";
+import { SuperBuyAlert } from "@/components/SuperBuyAlert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { Clock, AlertTriangle, TerminalSquare, Globe, Building2, TrendingUp } from "lucide-react";
@@ -39,12 +40,28 @@ function SectionSkeleton({ count, cols }: { count: number; cols: string }) {
 }
 
 export default function Dashboard() {
+  const [alertDismissed, setAlertDismissed] = useState(false);
+  const [lastAlertKey, setLastAlertKey] = useState("");
+
   const { data, isLoading, isError, error, isFetching } = useGetStocks({
     query: {
       refetchInterval: 60000,
       refetchOnWindowFocus: true,
     },
   });
+
+  const superBuySymbols = data?.superBuySignals ?? [];
+  const alertKey = superBuySymbols.join(",");
+
+  // Re-show alert whenever the set of super-buy symbols changes
+  useEffect(() => {
+    if (alertKey && alertKey !== lastAlertKey) {
+      setAlertDismissed(false);
+      setLastAlertKey(alertKey);
+    }
+  }, [alertKey, lastAlertKey]);
+
+  const showAlert = superBuySymbols.length > 0 && !alertDismissed;
 
   if (isError) {
     return (
@@ -82,6 +99,14 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen relative bg-background pb-20">
+      {/* Global super buy alert */}
+      {showAlert && (
+        <SuperBuyAlert
+          symbols={superBuySymbols}
+          onDismiss={() => setAlertDismissed(true)}
+        />
+      )}
+
       <div className="absolute inset-0 z-0">
         <img
           src={`${import.meta.env.BASE_URL}images/terminal-bg.png`}
