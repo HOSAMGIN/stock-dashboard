@@ -22,9 +22,15 @@ export const HealthCheckResponse = zod.object({
 export const GetStocksResponse = zod.object({
   stocks: zod.array(
     zod.object({
-      symbol: zod.string().describe("Stock ticker symbol"),
+      symbol: zod
+        .string()
+        .describe("Stock ticker symbol (Yahoo Finance format)"),
+      displaySymbol: zod.string().describe("Short display symbol for UI"),
       name: zod.string().describe("Full company\/fund name"),
-      currentPrice: zod.number().describe("Current stock price in USD"),
+      category: zod
+        .enum(["us-stocks", "kr-stocks", "indices"])
+        .describe("Asset category"),
+      currentPrice: zod.number().describe("Current stock price"),
       previousClose: zod.number().describe("Previous day closing price"),
       changePercent: zod
         .number()
@@ -53,6 +59,7 @@ export const GetStocksResponse = zod.object({
         .describe("Historical closing prices (last 30 days)"),
       lastUpdated: zod.string().describe("ISO timestamp of last update"),
       volume: zod.number().describe("Trading volume"),
+      currency: zod.string().describe("Currency code (USD, KRW, etc.)"),
     }),
   ),
   lastUpdated: zod.string().describe("ISO timestamp of last update"),
@@ -67,9 +74,13 @@ export const GetStockParams = zod.object({
 });
 
 export const GetStockResponse = zod.object({
-  symbol: zod.string().describe("Stock ticker symbol"),
+  symbol: zod.string().describe("Stock ticker symbol (Yahoo Finance format)"),
+  displaySymbol: zod.string().describe("Short display symbol for UI"),
   name: zod.string().describe("Full company\/fund name"),
-  currentPrice: zod.number().describe("Current stock price in USD"),
+  category: zod
+    .enum(["us-stocks", "kr-stocks", "indices"])
+    .describe("Asset category"),
+  currentPrice: zod.number().describe("Current stock price"),
   previousClose: zod.number().describe("Previous day closing price"),
   changePercent: zod
     .number()
@@ -98,4 +109,5 @@ export const GetStockResponse = zod.object({
     .describe("Historical closing prices (last 30 days)"),
   lastUpdated: zod.string().describe("ISO timestamp of last update"),
   volume: zod.number().describe("Trading volume"),
+  currency: zod.string().describe("Currency code (USD, KRW, etc.)"),
 });

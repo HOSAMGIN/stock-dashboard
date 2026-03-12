@@ -2,7 +2,18 @@ import YahooFinance from "yahoo-finance2";
 
 const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey", "ripHistorical"] });
 
-const SYMBOLS = ["SOXL", "TSLL", "NVDA", "TSLA"] as const;
+const SYMBOLS = [
+  "SOXL",
+  "TSLL",
+  "NVDA",
+  "TSLA",
+  "000660.KS",
+  "005930.KS",
+  "005380.KS",
+  "^KS11",
+  "^GSPC",
+  "^NDX",
+] as const;
 type Symbol = (typeof SYMBOLS)[number];
 
 const SYMBOL_NAMES: Record<Symbol, string> = {
@@ -10,6 +21,40 @@ const SYMBOL_NAMES: Record<Symbol, string> = {
   TSLL: "Direxion Daily TSLA Bull 2X",
   NVDA: "NVIDIA Corporation",
   TSLA: "Tesla, Inc.",
+  "000660.KS": "SK하이닉스",
+  "005930.KS": "삼성전자",
+  "005380.KS": "현대자동차",
+  "^KS11": "KOSPI",
+  "^GSPC": "S&P 500",
+  "^NDX": "NASDAQ 100",
+};
+
+const SYMBOL_DISPLAY: Record<Symbol, string> = {
+  SOXL: "SOXL",
+  TSLL: "TSLL",
+  NVDA: "NVDA",
+  TSLA: "TSLA",
+  "000660.KS": "하이닉스",
+  "005930.KS": "삼성전자",
+  "005380.KS": "현대차",
+  "^KS11": "KOSPI",
+  "^GSPC": "S&P500",
+  "^NDX": "NDX100",
+};
+
+export type Category = "us-stocks" | "kr-stocks" | "indices";
+
+const SYMBOL_CATEGORY: Record<Symbol, Category> = {
+  SOXL: "us-stocks",
+  TSLL: "us-stocks",
+  NVDA: "us-stocks",
+  TSLA: "us-stocks",
+  "000660.KS": "kr-stocks",
+  "005930.KS": "kr-stocks",
+  "005380.KS": "kr-stocks",
+  "^KS11": "indices",
+  "^GSPC": "indices",
+  "^NDX": "indices",
 };
 
 export interface PricePoint {
@@ -21,7 +66,9 @@ export interface PricePoint {
 
 export interface StockData {
   symbol: string;
+  displaySymbol: string;
   name: string;
+  category: Category;
   currentPrice: number;
   previousClose: number;
   changePercent: number;
@@ -32,6 +79,7 @@ export interface StockData {
   historicalPrices: PricePoint[];
   lastUpdated: string;
   volume: number;
+  currency: string;
 }
 
 function calcRSI(closes: number[], period = 14): number {
@@ -85,22 +133,21 @@ async function fetchStockData(symbol: string): Promise<StockData> {
     rsi14 < 30 ? "buy" : rsi14 >= 70 ? "sell" : "neutral";
 
   const ma20Val = calcMA(closes, 20) ?? (closes[closes.length - 1] || 0);
-  const currentPrice =
-    quote.regularMarketPrice ?? closes[closes.length - 1] ?? 0;
+  const currentPrice = quote.regularMarketPrice ?? closes[closes.length - 1] ?? 0;
   const previousClose = quote.regularMarketPreviousClose ?? closes[closes.length - 2] ?? 0;
   const changePercent = previousClose
     ? ((currentPrice - previousClose) / previousClose) * 100
     : 0;
-  const ma20Deviation = ma20Val
-    ? ((currentPrice - ma20Val) / ma20Val) * 100
-    : 0;
+  const ma20Deviation = ma20Val ? ((currentPrice - ma20Val) / ma20Val) * 100 : 0;
 
   const last30 = sorted.slice(-30);
-  const historicalPrices: PricePoint[] = last30.map((d, idx) => {
-    const closesUpToNow = sorted.slice(0, sorted.indexOf(d) + 1).map((x) => x.close as number);
+  const historicalPrices: PricePoint[] = last30.map((d) => {
+    const closesUpToNow = sorted
+      .slice(0, sorted.indexOf(d) + 1)
+      .map((x) => x.close as number);
     const ma = calcMA(closesUpToNow, 20);
     const maVal = ma ?? (closesUpToNow[closesUpToNow.length - 1] || 0);
-    const dev = maVal ? ((( d.close as number) - maVal) / maVal) * 100 : 0;
+    const dev = maVal ? (((d.close as number) - maVal) / maVal) * 100 : 0;
     return {
       date: d.date.toISOString().split("T")[0],
       close: Math.round((d.close as number) * 100) / 100,
@@ -109,9 +156,13 @@ async function fetchStockData(symbol: string): Promise<StockData> {
     };
   });
 
+  const currency = (quote as any).currency ?? (symbol.endsWith(".KS") ? "KRW" : "USD");
+
   return {
     symbol,
+    displaySymbol: SYMBOL_DISPLAY[symbol as Symbol] ?? symbol,
     name: SYMBOL_NAMES[symbol as Symbol] ?? symbol,
+    category: SYMBOL_CATEGORY[symbol as Symbol] ?? "us-stocks",
     currentPrice: Math.round(currentPrice * 100) / 100,
     previousClose: Math.round(previousClose * 100) / 100,
     changePercent: Math.round(changePercent * 100) / 100,
@@ -121,7 +172,8 @@ async function fetchStockData(symbol: string): Promise<StockData> {
     ma20DeviationPercent: Math.round(ma20Deviation * 100) / 100,
     historicalPrices,
     lastUpdated: new Date().toISOString(),
-    volume: quote.regularMarketVolume ?? 0,
+    volume: (quote as any).regularMarketVolume ?? 0,
+    currency,
   };
 }
 
@@ -133,17 +185,30 @@ export async function getAllStocks(): Promise<StockData[]> {
   if (cache && now - cache.fetchedAt < CACHE_TTL_MS) {
     return cache.data;
   }
-  const results = await Promise.all(SYMBOLS.map((s) => fetchStockData(s)));
-  cache = { data: results, fetchedAt: now };
-  return results;
+  const results = await Promise.allSettled(SYMBOLS.map((s) => fetchStockData(s)));
+  const data = results
+    .filter((r): r is PromiseFulfilledResult<StockData> => r.status === "fulfilled")
+    .map((r) => r.value);
+
+  if (results.some((r) => r.status === "rejected")) {
+    const rejected = results.filter((r) => r.status === "rejected") as PromiseRejectedResult[];
+    rejected.forEach((r, i) => console.error(`Failed to fetch symbol:`, r.reason));
+  }
+
+  cache = { data, fetchedAt: now };
+  return data;
 }
 
-export async function getStockBySymbol(
-  symbol: string
-): Promise<StockData | null> {
-  if (!SYMBOLS.includes(symbol.toUpperCase() as Symbol)) return null;
+export async function getStockBySymbol(symbol: string): Promise<StockData | null> {
   const all = await getAllStocks();
-  return all.find((s) => s.symbol === symbol.toUpperCase()) ?? null;
+  return (
+    all.find(
+      (s) =>
+        s.symbol === symbol ||
+        s.symbol.toUpperCase() === symbol.toUpperCase() ||
+        s.displaySymbol === symbol
+    ) ?? null
+  );
 }
 
 export { SYMBOLS };

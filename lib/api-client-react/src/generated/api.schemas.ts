@@ -10,6 +10,18 @@ export interface HealthStatus {
 }
 
 /**
+ * Asset category
+ */
+export type StockDataCategory =
+  (typeof StockDataCategory)[keyof typeof StockDataCategory];
+
+export const StockDataCategory = {
+  "us-stocks": "us-stocks",
+  "kr-stocks": "kr-stocks",
+  indices: "indices",
+} as const;
+
+/**
  * RSI signal - buy if < 30, sell if >= 70, neutral otherwise
  */
 export type StockDataRsiSignal =
@@ -33,11 +45,15 @@ export interface PricePoint {
 }
 
 export interface StockData {
-  /** Stock ticker symbol */
+  /** Stock ticker symbol (Yahoo Finance format) */
   symbol: string;
+  /** Short display symbol for UI */
+  displaySymbol: string;
   /** Full company/fund name */
   name: string;
-  /** Current stock price in USD */
+  /** Asset category */
+  category: StockDataCategory;
+  /** Current stock price */
   currentPrice: number;
   /** Previous day closing price */
   previousClose: number;
@@ -57,6 +73,8 @@ export interface StockData {
   lastUpdated: string;
   /** Trading volume */
   volume: number;
+  /** Currency code (USD, KRW, etc.) */
+  currency: string;
 }
 
 export interface StocksResponse {

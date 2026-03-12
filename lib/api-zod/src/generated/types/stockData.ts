@@ -6,14 +6,19 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PricePoint } from "./pricePoint";
+import type { StockDataCategory } from "./stockDataCategory";
 import type { StockDataRsiSignal } from "./stockDataRsiSignal";
 
 export interface StockData {
-  /** Stock ticker symbol */
+  /** Stock ticker symbol (Yahoo Finance format) */
   symbol: string;
+  /** Short display symbol for UI */
+  displaySymbol: string;
   /** Full company/fund name */
   name: string;
-  /** Current stock price in USD */
+  /** Asset category */
+  category: StockDataCategory;
+  /** Current stock price */
   currentPrice: number;
   /** Previous day closing price */
   previousClose: number;
@@ -33,4 +38,6 @@ export interface StockData {
   lastUpdated: string;
   /** Trading volume */
   volume: number;
+  /** Currency code (USD, KRW, etc.) */
+  currency: string;
 }

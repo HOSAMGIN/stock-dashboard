@@ -10,5 +10,6 @@ export * from "./errorResponse";
 export * from "./healthStatus";
 export * from "./pricePoint";
 export * from "./stockData";
+export * from "./stockDataCategory";
 export * from "./stockDataRsiSignal";
 export * from "./stocksResponse";

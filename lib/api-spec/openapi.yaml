@@ -77,13 +77,20 @@ components:
       properties:
         symbol:
           type: string
-          description: Stock ticker symbol
+          description: Stock ticker symbol (Yahoo Finance format)
+        displaySymbol:
+          type: string
+          description: Short display symbol for UI
         name:
           type: string
           description: Full company/fund name
+        category:
+          type: string
+          enum: [us-stocks, kr-stocks, indices]
+          description: Asset category
         currentPrice:
           type: number
-          description: Current stock price in USD
+          description: Current stock price
         previousClose:
           type: number
           description: Previous day closing price
@@ -114,9 +121,14 @@ components:
         volume:
           type: number
           description: Trading volume
+        currency:
+          type: string
+          description: Currency code (USD, KRW, etc.)
       required:
         - symbol
+        - displaySymbol
         - name
+        - category
         - currentPrice
         - previousClose
         - changePercent
@@ -127,6 +139,7 @@ components:
         - historicalPrices
         - lastUpdated
         - volume
+        - currency
     PricePoint:
       type: object
       properties:
