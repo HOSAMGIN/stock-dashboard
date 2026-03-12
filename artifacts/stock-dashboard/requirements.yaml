@@ -1,0 +1,12 @@
+packages:
+  "recharts": "For the MA20 deviation charts"
+  "date-fns": "For formatting dates in the chart and last updated timestamp"
+  "framer-motion": "For smooth entrance animations of the dashboard panels"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for merging tailwind classes safely"
+  "lucide-react": "Icons for the dashboard"
+
+images:
+  - path: "artifacts/stock-dashboard/public/images/terminal-bg.png"
+    description: "A very dark, subtle technical grid pattern, futuristic financial terminal background, almost pure black with faint dark blue/cyan grid lines, low opacity, clean and professional"
+    aspect_ratio: "16:9"

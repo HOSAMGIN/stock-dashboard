@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Deep Financial Terminal Dark Theme */
+  --color-background: hsl(225 30% 6%);
+  --color-foreground: hsl(210 40% 98%);
+  
+  --color-card: hsl(225 25% 9%);
+  --color-card-foreground: hsl(210 40% 98%);
+  
+  --color-popover: hsl(225 25% 9%);
+  --color-popover-foreground: hsl(210 40% 98%);
+  
+  --color-primary: hsl(217 91% 60%); /* Electric Blue */
+  --color-primary-foreground: hsl(210 40% 98%);
+  
+  --color-secondary: hsl(225 20% 15%);
+  --color-secondary-foreground: hsl(210 40% 98%);
+  
+  --color-muted: hsl(225 20% 15%);
+  --color-muted-foreground: hsl(215 20.2% 65.1%);
+  
+  --color-accent: hsl(225 20% 15%);
+  --color-accent-foreground: hsl(210 40% 98%);
+  
+  --color-destructive: hsl(350 100% 60%); /* Neon Red */
+  --color-destructive-foreground: hsl(210 40% 98%);
+  
+  --color-success: hsl(150 100% 45%); /* Neon Green */
+  --color-success-foreground: hsl(225 30% 6%);
+
+  --color-border: hsl(225 20% 16%);
+  --color-input: hsl(225 20% 16%);
+  --color-ring: hsl(217 91% 60%);
+
+  --radius-lg: 0.75rem;
+  --radius-md: 0.5rem;
+  --radius-sm: 0.25rem;
+  
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background-image: radial-gradient(circle at 50% 0%, rgba(29, 78, 216, 0.08) 0%, transparent 70%);
+    background-attachment: fixed;
+  }
+
+  /* Custom scrollbar for terminal look */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-secondary rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground;
+  }
+}
+
+@layer utilities {
+  .text-up {
+    @apply text-[var(--color-success)] drop-shadow-[0_0_8px_rgba(0,255,136,0.3)];
+  }
+  .text-down {
+    @apply text-[var(--color-destructive)] drop-shadow-[0_0_8px_rgba(255,51,102,0.3)];
+  }
+  .bg-up {
+    @apply bg-[var(--color-success)] text-background;
+  }
+  .bg-down {
+    @apply bg-[var(--color-destructive)] text-foreground;
+  }
+  .glass-panel {
+    @apply bg-card/80 backdrop-blur-md border border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.4)];
+  }
+}

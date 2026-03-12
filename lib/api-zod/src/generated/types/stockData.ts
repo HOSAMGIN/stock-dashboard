@@ -5,32 +5,8 @@
  * Stock Investment Timing Dashboard API
  * OpenAPI spec version: 0.1.0
  */
-export interface HealthStatus {
-  status: string;
-}
-
-/**
- * RSI signal - buy if < 30, sell if >= 70, neutral otherwise
- */
-export type StockDataRsiSignal =
-  (typeof StockDataRsiSignal)[keyof typeof StockDataRsiSignal];
-
-export const StockDataRsiSignal = {
-  buy: "buy",
-  sell: "sell",
-  neutral: "neutral",
-} as const;
-
-export interface PricePoint {
-  /** Date in YYYY-MM-DD format */
-  date: string;
-  /** Closing price */
-  close: number;
-  /** MA20 at this date (null if not enough data) */
-  ma20: number;
-  /** Deviation from MA20 in percent */
-  deviationPercent: number;
-}
+import type { PricePoint } from "./pricePoint";
+import type { StockDataRsiSignal } from "./stockDataRsiSignal";
 
 export interface StockData {
   /** Stock ticker symbol */
@@ -57,15 +33,4 @@ export interface StockData {
   lastUpdated: string;
   /** Trading volume */
   volume: number;
-}
-
-export interface StocksResponse {
-  stocks: StockData[];
-  /** ISO timestamp of last update */
-  lastUpdated: string;
-}
-
-export interface ErrorResponse {
-  error: string;
-  message: string;
 }

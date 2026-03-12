@@ -1,15 +1,16 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Stock Investment Timing Dashboard API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: stocks
+    description: Stock data and indicators
 paths:
   /healthz:
     get:
@@ -24,6 +25,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /stocks:
+    get:
+      operationId: getStocks
+      tags: [stocks]
+      summary: Get stock data with indicators
+      description: Returns current price, RSI(14), and MA20 deviation for all tracked symbols
+      responses:
+        "200":
+          description: Stock data with technical indicators
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StocksResponse"
+  /stocks/{symbol}:
+    get:
+      operationId: getStock
+      tags: [stocks]
+      summary: Get single stock data
+      description: Returns stock data for a specific symbol
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Stock data with technical indicators
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockData"
+        "404":
+          description: Symbol not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +72,101 @@ components:
           type: string
       required:
         - status
-
+    StockData:
+      type: object
+      properties:
+        symbol:
+          type: string
+          description: Stock ticker symbol
+        name:
+          type: string
+          description: Full company/fund name
+        currentPrice:
+          type: number
+          description: Current stock price in USD
+        previousClose:
+          type: number
+          description: Previous day closing price
+        changePercent:
+          type: number
+          description: Price change percentage from previous close
+        rsi14:
+          type: number
+          description: RSI(14) value (0-100)
+        rsiSignal:
+          type: string
+          enum: [buy, sell, neutral]
+          description: RSI signal - buy if < 30, sell if >= 70, neutral otherwise
+        ma20:
+          type: number
+          description: 20-day moving average
+        ma20DeviationPercent:
+          type: number
+          description: Current price deviation from MA20 in percent
+        historicalPrices:
+          type: array
+          description: Historical closing prices (last 30 days)
+          items:
+            $ref: "#/components/schemas/PricePoint"
+        lastUpdated:
+          type: string
+          description: ISO timestamp of last update
+        volume:
+          type: number
+          description: Trading volume
+      required:
+        - symbol
+        - name
+        - currentPrice
+        - previousClose
+        - changePercent
+        - rsi14
+        - rsiSignal
+        - ma20
+        - ma20DeviationPercent
+        - historicalPrices
+        - lastUpdated
+        - volume
+    PricePoint:
+      type: object
+      properties:
+        date:
+          type: string
+          description: Date in YYYY-MM-DD format
+        close:
+          type: number
+          description: Closing price
+        ma20:
+          type: number
+          description: MA20 at this date (null if not enough data)
+        deviationPercent:
+          type: number
+          description: Deviation from MA20 in percent
+      required:
+        - date
+        - close
+        - ma20
+        - deviationPercent
+    StocksResponse:
+      type: object
+      properties:
+        stocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockData"
+        lastUpdated:
+          type: string
+          description: ISO timestamp of last update
+      required:
+        - stocks
+        - lastUpdated
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message
