@@ -43,6 +43,7 @@ const SYMBOL_DISPLAY: Record<Symbol, string> = {
 };
 
 export type Category = "us-stocks" | "kr-stocks" | "indices";
+export type CrossSignal = "golden" | "dead" | "none";
 
 const SYMBOL_CATEGORY: Record<Symbol, Category> = {
   SOXL: "us-stocks",
@@ -61,6 +62,7 @@ export interface PricePoint {
   date: string;
   close: number;
   ma20: number;
+  ma60: number;
   deviationPercent: number;
   bbUpper: number;
   bbMiddle: number;
@@ -68,6 +70,8 @@ export interface PricePoint {
   macdLine: number;
   signalLine: number;
   macdHistogram: number;
+  isGoldenCrossPoint: boolean;
+  isDeadCrossPoint: boolean;
 }
 
 export interface StockData {
@@ -81,6 +85,7 @@ export interface StockData {
   rsi14: number;
   rsiSignal: "buy" | "sell" | "neutral";
   ma20: number;
+  ma60: number;
   ma20DeviationPercent: number;
   bbUpper: number;
   bbMiddle: number;
@@ -90,6 +95,8 @@ export interface StockData {
   macdLine: number;
   signalLine: number;
   macdHistogram: number;
+  crossSignal: CrossSignal;
+  isBestTiming: boolean;
   historicalPrices: PricePoint[];
   lastUpdated: string;
   volume: number;
@@ -172,6 +179,31 @@ function calcMACD(
   };
 }
 
+// Detect golden/dead cross: returns signal for the MOST RECENT crossover
+// Golden: MA20 crossed ABOVE MA60 within last 5 bars
+// Dead:   MA20 crossed BELOW MA60 within last 5 bars
+function detectCrossSignal(
+  ma20Series: (number | null)[],
+  ma60Series: (number | null)[]
+): CrossSignal {
+  const LOOKBACK = 5;
+  const len = Math.min(ma20Series.length, ma60Series.length);
+  if (len < 2) return "none";
+
+  const start = Math.max(1, len - LOOKBACK);
+  for (let i = len - 1; i >= start; i--) {
+    const prevMa20 = ma20Series[i - 1];
+    const prevMa60 = ma60Series[i - 1];
+    const currMa20 = ma20Series[i];
+    const currMa60 = ma60Series[i];
+    if (prevMa20 == null || prevMa60 == null || currMa20 == null || currMa60 == null) continue;
+
+    if (prevMa20 <= prevMa60 && currMa20 > currMa60) return "golden";
+    if (prevMa20 >= prevMa60 && currMa20 < currMa60) return "dead";
+  }
+  return "none";
+}
+
 // ── Historical point builder ───────────────────────────────────────────────
 
 function buildHistoricalPoints(
@@ -187,22 +219,47 @@ function buildHistoricalPoints(
 
   const last30 = sorted.slice(-30);
 
+  // Pre-compute MA20 and MA60 series over all data (for cross detection per point)
+  const ma20Series: (number | null)[] = closes.map((_, i) =>
+    calcSMA(closes.slice(0, i + 1), 20)
+  );
+  const ma60Series: (number | null)[] = closes.map((_, i) =>
+    calcSMA(closes.slice(0, i + 1), 60)
+  );
+
   return last30.map((d) => {
     const globalIdx = sorted.indexOf(d);
     const closesUpTo = closes.slice(0, globalIdx + 1);
 
-    const sma = calcSMA(closesUpTo, 20) ?? d.close;
-    const dev = sma ? ((d.close - sma) / sma) * 100 : 0;
+    const sma20 = calcSMA(closesUpTo, 20) ?? d.close;
+    const sma60 = calcSMA(closesUpTo, 60) ?? d.close;
+    const dev = sma20 ? ((d.close - sma20) / sma20) * 100 : 0;
 
-    const bb = calcBollingerBands(closesUpTo, 20) ?? { upper: sma, middle: sma, lower: sma };
+    const bb = calcBollingerBands(closesUpTo, 20) ?? { upper: sma20, middle: sma20, lower: sma20 };
 
     const macdLine = Math.round(macdAll[globalIdx] * 10000) / 10000;
     const signalLine = Math.round(signalAll[globalIdx] * 10000) / 10000;
 
+    // Detect if this specific bar is a cross point
+    const prevMa20 = globalIdx > 0 ? ma20Series[globalIdx - 1] : null;
+    const prevMa60 = globalIdx > 0 ? ma60Series[globalIdx - 1] : null;
+    const currMa20 = ma20Series[globalIdx];
+    const currMa60 = ma60Series[globalIdx];
+
+    const isGoldenCrossPoint = !!(
+      prevMa20 != null && prevMa60 != null && currMa20 != null && currMa60 != null &&
+      prevMa20 <= prevMa60 && currMa20 > currMa60
+    );
+    const isDeadCrossPoint = !!(
+      prevMa20 != null && prevMa60 != null && currMa20 != null && currMa60 != null &&
+      prevMa20 >= prevMa60 && currMa20 < currMa60
+    );
+
     return {
       date: d.date.toISOString().split("T")[0],
       close: Math.round(d.close * 100) / 100,
-      ma20: Math.round(sma * 100) / 100,
+      ma20: Math.round(sma20 * 100) / 100,
+      ma60: Math.round(sma60 * 100) / 100,
       deviationPercent: Math.round(dev * 100) / 100,
       bbUpper: Math.round(bb.upper * 100) / 100,
       bbMiddle: Math.round(bb.middle * 100) / 100,
@@ -210,6 +267,8 @@ function buildHistoricalPoints(
       macdLine,
       signalLine,
       macdHistogram: Math.round((macdLine - signalLine) * 10000) / 10000,
+      isGoldenCrossPoint,
+      isDeadCrossPoint,
     };
   });
 }
@@ -219,7 +278,7 @@ function buildHistoricalPoints(
 async function fetchStockData(symbol: string): Promise<StockData> {
   const endDate = new Date();
   const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 90); // need 90 days for MACD(26+9)
+  startDate.setDate(startDate.getDate() - 120); // 120 days for MA60 + MACD warm-up
 
   const [quote, historical] = await Promise.all([
     yahooFinance.quote(symbol),
@@ -242,6 +301,8 @@ async function fetchStockData(symbol: string): Promise<StockData> {
     rsi14 < 30 ? "buy" : rsi14 >= 70 ? "sell" : "neutral";
 
   const ma20Val = calcSMA(closes, 20) ?? closes[closes.length - 1] ?? 0;
+  const ma60Val = calcSMA(closes, 60) ?? closes[closes.length - 1] ?? 0;
+
   const currentPrice = (quote as any).regularMarketPrice ?? closes[closes.length - 1] ?? 0;
   const previousClose = (quote as any).regularMarketPreviousClose ?? closes[closes.length - 2] ?? 0;
   const changePercent = previousClose ? ((currentPrice - previousClose) / previousClose) * 100 : 0;
@@ -252,6 +313,16 @@ async function fetchStockData(symbol: string): Promise<StockData> {
   const isSuperBuySignal = isTouchingLowerBand && rsi14 < 30;
 
   const macd = calcMACD(closes);
+
+  // Golden/Dead cross detection using rolling MA series
+  const ma20Series: (number | null)[] = closes.map((_, i) =>
+    calcSMA(closes.slice(0, i + 1), 20)
+  );
+  const ma60Series: (number | null)[] = closes.map((_, i) =>
+    calcSMA(closes.slice(0, i + 1), 60)
+  );
+  const crossSignal = detectCrossSignal(ma20Series, ma60Series);
+  const isBestTiming = rsi14 < 30 && crossSignal === "golden";
 
   const historicalPrices = buildHistoricalPoints(sorted);
   const currency = (quote as any).currency ?? (symbol.endsWith(".KS") ? "KRW" : "USD");
@@ -267,6 +338,7 @@ async function fetchStockData(symbol: string): Promise<StockData> {
     rsi14,
     rsiSignal,
     ma20: Math.round(ma20Val * 100) / 100,
+    ma60: Math.round(ma60Val * 100) / 100,
     ma20DeviationPercent: Math.round(ma20Deviation * 100) / 100,
     bbUpper: Math.round(bb.upper * 100) / 100,
     bbMiddle: Math.round(bb.middle * 100) / 100,
@@ -276,6 +348,8 @@ async function fetchStockData(symbol: string): Promise<StockData> {
     macdLine: macd.macdLine,
     signalLine: macd.signalLine,
     macdHistogram: macd.histogram,
+    crossSignal,
+    isBestTiming,
     historicalPrices,
     lastUpdated: new Date().toISOString(),
     volume: (quote as any).regularMarketVolume ?? 0,

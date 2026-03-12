@@ -33,6 +33,18 @@ export const StockDataRsiSignal = {
   neutral: "neutral",
 } as const;
 
+/**
+ * MA20/MA60 cross signal detected within last 5 bars
+ */
+export type StockDataCrossSignal =
+  (typeof StockDataCrossSignal)[keyof typeof StockDataCrossSignal];
+
+export const StockDataCrossSignal = {
+  golden: "golden",
+  dead: "dead",
+  none: "none",
+} as const;
+
 export interface PricePoint {
   /** Date in YYYY-MM-DD format */
   date: string;
@@ -40,6 +52,8 @@ export interface PricePoint {
   close: number;
   /** MA20 at this date */
   ma20: number;
+  /** MA60 at this date */
+  ma60: number;
   /** Deviation from MA20 in percent */
   deviationPercent: number;
   /** Upper Bollinger Band */
@@ -54,6 +68,10 @@ export interface PricePoint {
   signalLine: number;
   /** MACD histogram value */
   macdHistogram: number;
+  /** True if this bar is a golden cross point (MA20 crossed above MA60) */
+  isGoldenCrossPoint: boolean;
+  /** True if this bar is a dead cross point (MA20 crossed below MA60) */
+  isDeadCrossPoint: boolean;
 }
 
 export interface StockData {
@@ -77,6 +95,8 @@ export interface StockData {
   rsiSignal: StockDataRsiSignal;
   /** 20-day moving average */
   ma20: number;
+  /** 60-day moving average */
+  ma60: number;
   /** Current price deviation from MA20 in percent */
   ma20DeviationPercent: number;
   /** Bollinger Band upper line (SMA20 + 2*stddev) */
@@ -95,6 +115,10 @@ export interface StockData {
   signalLine: number;
   /** MACD histogram (MACD - Signal) */
   macdHistogram: number;
+  /** MA20/MA60 cross signal detected within last 5 bars */
+  crossSignal: StockDataCrossSignal;
+  /** True when RSI < 30 AND golden cross — best buy timing */
+  isBestTiming: boolean;
   /** Historical closing prices (last 30 days with all indicators) */
   historicalPrices: PricePoint[];
   /** ISO timestamp of last update */
@@ -111,6 +135,12 @@ export interface StocksResponse {
   lastUpdated: string;
   /** List of symbols currently triggering the super buy alert */
   superBuySignals: string[];
+  /** List of symbols with a recent golden cross */
+  goldenCrossSignals: string[];
+  /** List of symbols with a recent dead cross */
+  deadCrossSignals: string[];
+  /** List of symbols with RSI < 30 AND golden cross (best timing) */
+  bestTimingSignals: string[];
 }
 
 export interface ErrorResponse {

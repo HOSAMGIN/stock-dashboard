@@ -5,7 +5,7 @@ import { StockCard } from "@/components/StockCard";
 import { SuperBuyAlert } from "@/components/SuperBuyAlert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { Clock, AlertTriangle, TerminalSquare, Globe, Building2, TrendingUp } from "lucide-react";
+import { Clock, AlertTriangle, TerminalSquare, Globe, Building2, TrendingUp, TrendingDown, Star, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 
 const CATEGORY_META = {
@@ -175,6 +175,84 @@ export default function Dashboard() {
             </motion.div>
           </div>
         </header>
+
+        {/* Signal Summary Panel */}
+        {!isLoading && data && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+            className="mb-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
+          >
+            {/* Best Timing */}
+            <div className={`glass-panel rounded-xl p-4 border ${data.bestTimingSignals.length > 0 ? "border-amber-500/40 bg-amber-500/5" : "border-white/5"}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <Star className={`w-4 h-4 ${data.bestTimingSignals.length > 0 ? "text-amber-400 fill-amber-400" : "text-muted-foreground"}`} />
+                <span className="text-xs font-mono font-semibold text-muted-foreground">베스트 타이밍</span>
+              </div>
+              {data.bestTimingSignals.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {data.bestTimingSignals.map((s) => (
+                    <span key={s} className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">{s}</span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs font-mono text-muted-foreground/50">해당 종목 없음</p>
+              )}
+            </div>
+
+            {/* Golden Cross */}
+            <div className={`glass-panel rounded-xl p-4 border ${data.goldenCrossSignals.length > 0 ? "border-emerald-500/40 bg-emerald-500/5" : "border-white/5"}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className={`w-4 h-4 ${data.goldenCrossSignals.length > 0 ? "text-emerald-400" : "text-muted-foreground"}`} />
+                <span className="text-xs font-mono font-semibold text-muted-foreground">추세 전환: 골든크로스</span>
+              </div>
+              {data.goldenCrossSignals.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {data.goldenCrossSignals.map((s) => (
+                    <span key={s} className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">{s}</span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs font-mono text-muted-foreground/50">해당 종목 없음</p>
+              )}
+            </div>
+
+            {/* Dead Cross */}
+            <div className={`glass-panel rounded-xl p-4 border ${data.deadCrossSignals.length > 0 ? "border-red-500/40 bg-red-500/5" : "border-white/5"}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingDown className={`w-4 h-4 ${data.deadCrossSignals.length > 0 ? "text-red-400" : "text-muted-foreground"}`} />
+                <span className="text-xs font-mono font-semibold text-muted-foreground">하락 추세: 데드크로스</span>
+              </div>
+              {data.deadCrossSignals.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {data.deadCrossSignals.map((s) => (
+                    <span key={s} className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30">{s}</span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs font-mono text-muted-foreground/50">해당 종목 없음</p>
+              )}
+            </div>
+
+            {/* Super Buy */}
+            <div className={`glass-panel rounded-xl p-4 border ${data.superBuySignals.length > 0 ? "border-green-500/40 bg-green-500/5" : "border-white/5"}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className={`w-4 h-4 ${data.superBuySignals.length > 0 ? "text-green-400" : "text-muted-foreground"}`} />
+                <span className="text-xs font-mono font-semibold text-muted-foreground">역대급 매수 기회</span>
+              </div>
+              {data.superBuySignals.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {data.superBuySignals.map((s) => (
+                    <span key={s} className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-green-500/20 text-green-300 border border-green-500/30">{s}</span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs font-mono text-muted-foreground/50">해당 종목 없음</p>
+              )}
+            </div>
+          </motion.div>
+        )}
 
         {/* Category Sections */}
         <div className="space-y-12">

@@ -30,7 +30,7 @@ paths:
       operationId: getStocks
       tags: [stocks]
       summary: Get stock data with indicators
-      description: Returns current price, RSI(14), MA20, MACD, Bollinger Bands for all tracked symbols
+      description: Returns current price, RSI(14), MA20, MA60, MACD, Bollinger Bands, Golden/Dead Cross for all tracked symbols
       responses:
         "200":
           description: Stock data with technical indicators
@@ -107,6 +107,9 @@ components:
         ma20:
           type: number
           description: 20-day moving average
+        ma60:
+          type: number
+          description: 60-day moving average
         ma20DeviationPercent:
           type: number
           description: Current price deviation from MA20 in percent
@@ -134,6 +137,13 @@ components:
         macdHistogram:
           type: number
           description: MACD histogram (MACD - Signal)
+        crossSignal:
+          type: string
+          enum: [golden, dead, none]
+          description: MA20/MA60 cross signal detected within last 5 bars
+        isBestTiming:
+          type: boolean
+          description: True when RSI < 30 AND golden cross — best buy timing
         historicalPrices:
           type: array
           description: Historical closing prices (last 30 days with all indicators)
@@ -159,6 +169,7 @@ components:
         - rsi14
         - rsiSignal
         - ma20
+        - ma60
         - ma20DeviationPercent
         - bbUpper
         - bbMiddle
@@ -168,6 +179,8 @@ components:
         - macdLine
         - signalLine
         - macdHistogram
+        - crossSignal
+        - isBestTiming
         - historicalPrices
         - lastUpdated
         - volume
@@ -184,6 +197,9 @@ components:
         ma20:
           type: number
           description: MA20 at this date
+        ma60:
+          type: number
+          description: MA60 at this date
         deviationPercent:
           type: number
           description: Deviation from MA20 in percent
@@ -205,10 +221,17 @@ components:
         macdHistogram:
           type: number
           description: MACD histogram value
+        isGoldenCrossPoint:
+          type: boolean
+          description: True if this bar is a golden cross point (MA20 crossed above MA60)
+        isDeadCrossPoint:
+          type: boolean
+          description: True if this bar is a dead cross point (MA20 crossed below MA60)
       required:
         - date
         - close
         - ma20
+        - ma60
         - deviationPercent
         - bbUpper
         - bbMiddle
@@ -216,6 +239,8 @@ components:
         - macdLine
         - signalLine
         - macdHistogram
+        - isGoldenCrossPoint
+        - isDeadCrossPoint
     StocksResponse:
       type: object
       properties:
@@ -231,10 +256,28 @@ components:
           description: List of symbols currently triggering the super buy alert
           items:
             type: string
+        goldenCrossSignals:
+          type: array
+          description: List of symbols with a recent golden cross
+          items:
+            type: string
+        deadCrossSignals:
+          type: array
+          description: List of symbols with a recent dead cross
+          items:
+            type: string
+        bestTimingSignals:
+          type: array
+          description: List of symbols with RSI < 30 AND golden cross (best timing)
+          items:
+            type: string
       required:
         - stocks
         - lastUpdated
         - superBuySignals
+        - goldenCrossSignals
+        - deadCrossSignals
+        - bestTimingSignals
     ErrorResponse:
       type: object
       properties:

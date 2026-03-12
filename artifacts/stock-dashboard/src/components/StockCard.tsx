@@ -5,10 +5,11 @@ import { RsiGauge } from "@/components/RsiGauge";
 import { DeviationChart } from "@/components/DeviationChart";
 import { BollingerChart } from "@/components/BollingerChart";
 import { MacdChart } from "@/components/MacdChart";
+import { MaCrossChart } from "@/components/MaCrossChart";
 import { BodyPositionGauge } from "@/components/BodyPositionGauge";
 import { formatPrice, formatPercent, formatVolume } from "@/lib/utils";
 import type { StockData } from "@workspace/api-client-react";
-import { ArrowUpRight, ArrowDownRight, Activity, BarChart2, ChevronDown, ChevronUp, Zap } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Activity, BarChart2, ChevronDown, ChevronUp, Zap, Star, TrendingUp, TrendingDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface StockCardProps {
@@ -43,13 +44,33 @@ export function StockCard({ data, index }: StockCardProps) {
     >
       <Card
         className={`glass-panel overflow-hidden border-t-2 transition-all duration-300 group h-full ${
-          data.isSuperBuySignal
+          data.isBestTiming
+            ? "border-t-amber-400 shadow-[0_0_28px_rgba(251,191,36,0.3)]"
+            : data.isSuperBuySignal
             ? "border-t-green-400 shadow-[0_0_24px_rgba(74,222,128,0.25)]"
+            : data.crossSignal === "golden"
+            ? "border-t-emerald-500/70 shadow-[0_0_16px_rgba(52,211,153,0.15)]"
+            : data.crossSignal === "dead"
+            ? "border-t-red-500/50"
             : "border-t-transparent hover:border-t-primary/50"
         }`}
       >
+        {/* Best timing banner (RSI < 30 + golden cross) */}
+        {data.isBestTiming && (
+          <motion.div
+            className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-1.5 flex items-center gap-2"
+            animate={{ opacity: [0.7, 1, 0.7] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            <Star className="w-3.5 h-3.5 text-amber-400 shrink-0 fill-amber-400" />
+            <span className="text-[11px] font-bold font-mono text-amber-400 tracking-wide">
+              베스트 타이밍 — 골든크로스 + RSI 과매도 동시 발생
+            </span>
+          </motion.div>
+        )}
+
         {/* Super buy signal banner */}
-        {data.isSuperBuySignal && (
+        {data.isSuperBuySignal && !data.isBestTiming && (
           <motion.div
             className="bg-green-500/15 border-b border-green-500/30 px-4 py-1.5 flex items-center gap-2"
             animate={{ opacity: [0.7, 1, 0.7] }}
@@ -62,6 +83,30 @@ export function StockCard({ data, index }: StockCardProps) {
           </motion.div>
         )}
 
+        {/* Golden cross banner */}
+        {data.crossSignal === "golden" && !data.isBestTiming && (
+          <motion.div
+            className="bg-emerald-500/10 border-b border-emerald-500/20 px-4 py-1 flex items-center gap-2"
+          >
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="text-[11px] font-bold font-mono text-emerald-400 tracking-wide">
+              추세 전환: 강력 매수 신호 — 골든크로스
+            </span>
+          </motion.div>
+        )}
+
+        {/* Dead cross banner */}
+        {data.crossSignal === "dead" && (
+          <motion.div
+            className="bg-red-500/10 border-b border-red-500/20 px-4 py-1 flex items-center gap-2"
+          >
+            <TrendingDown className="w-3.5 h-3.5 text-red-400 shrink-0" />
+            <span className="text-[11px] font-bold font-mono text-red-400 tracking-wide">
+              하락 추세: 주의 — 데드크로스
+            </span>
+          </motion.div>
+        )}
+
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
             <div>
@@ -69,9 +114,24 @@ export function StockCard({ data, index }: StockCardProps) {
                 <h2 className="text-2xl font-bold tracking-tight font-mono text-foreground">
                   {data.displaySymbol}
                 </h2>
+                {data.isBestTiming && (
+                  <span title="베스트 타이밍: 골든크로스 + RSI 과매도">
+                    <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  </span>
+                )}
                 <Badge variant={getRsiBadgeVariant(data.rsiSignal)} className="font-sans px-2 text-xs">
                   {getRsiLabel(data.rsiSignal)}
                 </Badge>
+                {data.crossSignal === "golden" && (
+                  <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    골든
+                  </span>
+                )}
+                {data.crossSignal === "dead" && (
+                  <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">
+                    데드
+                  </span>
+                )}
               </div>
               <p className="text-xs text-muted-foreground mt-1 leading-tight">{data.name}</p>
             </div>
@@ -159,21 +219,32 @@ export function StockCard({ data, index }: StockCardProps) {
                 className="overflow-hidden"
               >
                 <div className="mt-4 space-y-6 pt-4 border-t border-white/5">
-                  {/* Bollinger Bands */}
-                  <BollingerChart
+                  {/* MA Cross chart */}
+                  <MaCrossChart
                     data={data.historicalPrices}
-                    currentPrice={data.currentPrice}
                     currency={currency}
-                    isTouchingLowerBand={data.isTouchingLowerBand}
+                    crossSignal={data.crossSignal}
                   />
 
+                  {/* Bollinger Bands */}
+                  <div className="border-t border-white/5 pt-4">
+                    <BollingerChart
+                      data={data.historicalPrices}
+                      currentPrice={data.currentPrice}
+                      currency={currency}
+                      isTouchingLowerBand={data.isTouchingLowerBand}
+                    />
+                  </div>
+
                   {/* MACD */}
-                  <MacdChart
-                    data={data.historicalPrices}
-                    macdLine={data.macdLine}
-                    signalLine={data.signalLine}
-                    macdHistogram={data.macdHistogram}
-                  />
+                  <div className="border-t border-white/5 pt-4">
+                    <MacdChart
+                      data={data.historicalPrices}
+                      macdLine={data.macdLine}
+                      signalLine={data.signalLine}
+                      macdHistogram={data.macdHistogram}
+                    />
+                  </div>
                 </div>
               </motion.div>
             )}
